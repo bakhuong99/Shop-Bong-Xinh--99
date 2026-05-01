@@ -1,0 +1,65 @@
+@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&family=Nunito:wght@400;600;700;800;900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Quicksand", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Nunito", sans-serif;
+  
+  --color-primary: #FF7EB3; /* Vivid Pink */
+  --color-primary-dark: #FF4D94;
+  --color-secondary: #00D2D3; /* Tropical Blue/Green */
+  --color-accent: #FF9F43; /* Warm Orange */
+  --color-surface: #F8F9FA;
+  
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  --radius-3xl: 2.5rem;
+
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.05);
+  --shadow-lg: 0 10px 30px rgba(0,0,0,0.08);
+}
+
+@layer base {
+  body {
+    @apply bg-surface text-gray-800 font-sans antialiased selection:bg-primary/20;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display;
+  }
+}
+
+@layer components {
+  .container {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  .clay-card {
+    @apply bg-white rounded-[2rem] shadow-sm border border-gray-100 p-6 transition-all hover:shadow-lg hover:border-primary/10;
+  }
+
+  .btn-primary {
+    @apply bg-primary text-white px-6 py-3 rounded-2xl font-bold transition-all hover:bg-primary-dark active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-primary/20 cursor-pointer;
+  }
+
+  .btn-secondary {
+    @apply bg-secondary text-white px-6 py-3 rounded-2xl font-bold transition-all hover:opacity-90 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-secondary/20 cursor-pointer;
+  }
+
+  .btn-outline {
+    @apply bg-white text-gray-700 border-2 border-gray-100 px-6 py-3 rounded-2xl font-bold transition-all hover:bg-gray-50 active:scale-95 flex items-center justify-center gap-2 cursor-pointer;
+  }
+
+  .input-field {
+    @apply w-full px-5 py-4 rounded-2xl border-2 border-gray-100 bg-white focus:outline-none focus:border-primary focus:ring-0 transition-all font-medium;
+  }
+}
+
+/* Custom Hide Scrollbar */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

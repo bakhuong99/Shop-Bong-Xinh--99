@@ -1,0 +1,162 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // -------------------------------------------------------------------------
+    // HELPERS (Phase 3: Primitive Definition)
+    // -------------------------------------------------------------------------
+    
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isEmailVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+    
+    function isAdmin() {
+      // Bootstrapped check via email + DB lookup for role
+      return isSignedIn() && (
+        request.auth.token.email == 'bakhuong1010@gmail.com' ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+      );
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // -------------------------------------------------------------------------
+    // GLOBAL SAFETY NET (Phase 4.0)
+    // -------------------------------------------------------------------------
+    // -------------------------------------------------------------------------
+    // Diagnostic
+    // -------------------------------------------------------------------------
+    match /test/connection {
+      allow read: if true;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // -------------------------------------------------------------------------
+    // USERS (Phase 4.6 & 4.8)
+    // -------------------------------------------------------------------------
+    match /users/{userId} {
+      function isValidUser(data) {
+        return data.keys().hasAll(['id', 'email', 'name', 'role', 'points', 'createdAt']) &&
+               data.keys().size() == 6 &&
+               data.id == userId &&
+               data.id == request.auth.uid &&
+               data.email is string && data.email.size() <= 256 &&
+               data.name is string && data.name.size() <= 100 &&
+               data.role in ['admin', 'customer'] &&
+               data.points is int && data.points >= 0 &&
+               data.createdAt is int;
+      }
+
+      // Restrict read access to owners or admins to protect PII (email, points)
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isAdmin();
+      
+      allow create: if isOwner(userId) && 
+                      isValidUser(incoming()) && 
+                      (incoming().role == 'customer' || (incoming().role == 'admin' && incoming().email == 'bakhuong1010@gmail.com')) &&
+                      incoming().points == 0;
+      
+      allow update: if (isOwner(userId) && 
+                      isValidUser(incoming()) && 
+                      incoming().role == existing().role &&
+                      incoming().points == existing().points &&
+                      incoming().email == existing().email &&
+                      incoming().createdAt == existing().createdAt &&
+                      incoming().diff(existing()).affectedKeys().hasOnly(['name'])) || isAdmin();
+    }
+
+    // -------------------------------------------------------------------------
+    // BRANDS
+    // -------------------------------------------------------------------------
+    match /brands/{brandId} {
+      function isValidBrand(data) {
+        return data.keys().hasAll(['name']) &&
+               data.name is string && data.name.size() <= 100;
+      }
+
+      allow read: if true;
+      allow create, update: if isAdmin() && isValidBrand(incoming());
+      allow delete: if isAdmin();
+    }
+
+    // -------------------------------------------------------------------------
+    // BABY PROFILES
+    // -------------------------------------------------------------------------
+    match /babyProfiles/{profileId} {
+      function isValidBabyProfile(data) {
+        return data.keys().hasAll(['name', 'dob', 'weight', 'skinType', 'userId']) &&
+               data.keys().size() == 5 &&
+               data.name is string && data.name.size() <= 100 &&
+               data.dob is string &&
+               data.weight is number &&
+               data.skinType in ['normal', 'sensitive', 'prone_to_rash'] &&
+               data.userId == request.auth.uid;
+      }
+
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow get: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() && isValidBabyProfile(incoming());
+      allow update: if (isOwner(existing().userId) && isValidBabyProfile(incoming()) && incoming().userId == existing().userId) || isAdmin();
+      allow delete: if isOwner(existing().userId) || isAdmin();
+    }
+
+    // -------------------------------------------------------------------------
+    // PRODUCTS
+    // -------------------------------------------------------------------------
+    match /products/{productId} {
+      function isValidProduct(data) {
+        return data.keys().hasAll(['name', 'price', 'imageUrl', 'category', 'brand', 'stock']) &&
+               data.name is string && data.name.size() <= 300 &&
+               data.price is number && data.price >= 0 &&
+               data.imageUrl is string &&
+               data.category is string &&
+               data.brand is string &&
+               data.stock is int && data.stock >= 0;
+      }
+
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // -------------------------------------------------------------------------
+    // ORDERS
+    // -------------------------------------------------------------------------
+    match /orders/{orderId} {
+      function isValidOrder(data) {
+        return data.keys().hasAll(['userId', 'items', 'total', 'status', 'createdAt', 'shippingAddress']) &&
+               data.userId == request.auth.uid &&
+               data.total is number && data.total >= 0 &&
+               data.status in ['pending', 'processing', 'shipping', 'completed', 'cancelled'] &&
+               data.items is list && data.items.size() > 0;
+      }
+
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow get: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() && isValidOrder(incoming());
+      allow update, delete: if isAdmin();
+    }
+  }
+}
+

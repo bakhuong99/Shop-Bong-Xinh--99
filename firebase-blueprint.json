@@ -1,0 +1,119 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Thông tin người dùng và phân quyền",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "role": { "type": "string", "enum": ["admin", "customer"] },
+        "points": { "type": "integer" },
+        "createdAt": { "type": "integer" },
+        "phone": { "type": "string" }
+      },
+      "required": ["id", "name", "email", "role", "points", "createdAt"]
+    },
+    "BabyProfile": {
+      "title": "Baby Profile",
+      "description": "Hồ sơ sức khỏe và sinh trưởng của bé",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "dob": { "type": "string", "format": "date" },
+        "weight": { "type": "number" },
+        "skinType": { "type": "string", "enum": ["normal", "sensitive", "prone_to_rash"] },
+        "userId": { "type": "string" }
+      },
+      "required": ["name", "dob", "weight", "skinType", "userId"]
+    },
+    "Subscription": {
+      "title": "Subscription",
+      "description": "Gói đăng ký giao hàng định kỳ",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "productId": { "type": "string" },
+        "frequency": { "type": "string", "enum": ["2_weeks", "1_month", "6_weeks"] },
+        "nextDelivery": { "type": "integer" },
+        "status": { "type": "string", "enum": ["active", "paused", "cancelled"] },
+        "pricePerCycle": { "type": "number" }
+      },
+      "required": ["userId", "productId", "frequency", "nextDelivery", "status", "pricePerCycle"]
+    },
+    "Product": {
+      "title": "Product",
+      "description": "Thông tin sản phẩm",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "price": { "type": "number" },
+        "imageUrl": { "type": "string" },
+        "category": { "type": "string", "enum": ["Bỉm sữa", "Đồ dùng sơ sinh", "Thực phẩm ăn dặm", "Đồ dùng cho mẹ bầu và sau sinh"] },
+        "brand": { "type": "string" },
+        "stock": { "type": "integer" },
+        "isSubscribeable": { "type": "boolean" },
+        "promotionType": { "type": "string", "enum": ["none", "percent", "fixed"] },
+        "promotionValue": { "type": "number" },
+        "specs": { "type": "object" },
+        "features": { "type": "array" }
+      },
+      "required": ["name", "price", "imageUrl", "category", "brand", "stock"]
+    },
+    "Brand": {
+      "title": "Brand",
+      "description": "Thương hiệu sản phẩm",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "logoUrl": { "type": "string" },
+        "description": { "type": "string" }
+      },
+      "required": ["name"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Đơn hàng",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "items": { "type": "array" },
+        "total": { "type": "number" },
+        "status": { "type": "string", "enum": ["pending", "processing", "shipping", "completed", "cancelled"] },
+        "createdAt": { "type": "integer" },
+        "shippingAddress": { "type": "string" },
+        "customerName": { "type": "string" },
+        "customerPhone": { "type": "string" }
+      },
+      "required": ["userId", "items", "total", "status", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Thông tin tài khoản khách hàng và admin"
+    },
+    "/brands/{brandId}": {
+      "schema": "Brand",
+      "description": "Danh sách các nhãn hàng"
+    },
+    "/orders/{orderId}": {
+      "schema": "Order",
+      "description": "Thông tin đơn hàng của khách"
+    },
+    "/babyProfiles/{profileId}": {
+      "schema": "BabyProfile",
+      "description": "Các hồ sơ bé của người dùng"
+    },
+    "/subscriptions/{subId}": {
+      "schema": "Subscription",
+      "description": "Các gói đăng ký định kỳ"
+    },
+    "/products/{productId}": {
+      "schema": "Product",
+      "description": "Danh mục sản phẩm của cửa hàng"
+    }
+  }
+}
